@@ -82,8 +82,6 @@
     "FunctionGitRepo": {
       "create_sample_data": "FaaSr/FaaSr-tutorial",
       "compute_sum": "FaaSr/FaaSr-tutorial"
-    },
-    "FunctionCRANPackage": {},
-    "FunctionGitHubPackage": {}
+    }
   }
   
