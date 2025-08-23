@@ -60,25 +60,25 @@ def build_faasr_payload(workflow_data, mask_secrets_for_github=False):
             
             if mask_secrets_for_github:
                 # Mask secrets for GitHub Actions (existing logic)
-                if faas_type == 'GitHubActions':
+                if faas_type.lower() in ['githubactions', 'github_actions', 'github']:
                     server_config['Token'] = f"{server_key}_TOKEN"
-                elif faas_type == 'Lambda':
+                elif faas_type.lower() in ['lambda', 'aws_lambda', 'aws']:
                     server_config['AccessKey'] = f"{server_key}_ACCESS_KEY"
                     server_config['SecretKey'] = f"{server_key}_SECRET_KEY"
-                elif faas_type == 'OpenWhisk':
+                elif faas_type.lower() in ['openwhisk', 'open_whisk', 'ow']:
                     server_config['API.key'] = f"{server_key}_API_KEY"
             else:
                 # Replace placeholder values with actual credentials
-                if faas_type == 'Lambda':
+                if faas_type.lower() in ['lambda', 'aws_lambda', 'aws']:
                     # Replace Lambda AccessKey/SecretKey placeholders
                     if credentials['My_Lambda_Account_ACCESS_KEY']:
                         server_config['AccessKey'] = credentials['My_Lambda_Account_ACCESS_KEY']
                     if credentials['My_Lambda_Account_SECRET_KEY']:
                         server_config['SecretKey'] = credentials['My_Lambda_Account_SECRET_KEY']
-                elif faas_type == 'GitHubActions':
+                elif faas_type.lower() in ['githubactions', 'github_actions', 'github']:
                     if credentials['My_GitHub_Account_TOKEN']:
                         server_config['Token'] = credentials['My_GitHub_Account_TOKEN']
-                elif faas_type == 'OpenWhisk':
+                elif faas_type.lower() in ['openwhisk', 'open_whisk', 'ow']:
                     # Always set the API.key field for OpenWhisk
                     if credentials['My_OW_Account_API_KEY']:
                         server_config['API.key'] = credentials['My_OW_Account_API_KEY']
@@ -110,7 +110,7 @@ def trigger_github_actions(workflow_data, function_name):
     username = server_config['UserName']
     reponame = server_config['ActionRepoName']
     repo = f"{username}/{reponame}"
-    branch = server_config['Branch']
+    branch = server_config.get('Branch', 'main')  # Default to 'main' if Branch not specified
     
     # Use function name directly for workflow name
     workflow_name = f"{function_name}.yml"
@@ -339,11 +339,11 @@ def main():
     print(f"Triggering function '{function_invoke}' on {faas_type}...")
     
     # Trigger based on FaaS type
-    if faas_type == 'githubactions':
+    if faas_type in ['githubactions', 'github_actions', 'github']:
         trigger_github_actions(workflow_data, function_invoke)
-    elif faas_type == 'lambda':
+    elif faas_type in ['lambda', 'aws_lambda', 'aws']:
         trigger_lambda(workflow_data, function_invoke)
-    elif faas_type == 'openwhisk':
+    elif faas_type in ['openwhisk', 'open_whisk', 'ow']:
         trigger_openwhisk(workflow_data, function_invoke)
     else:
         print(f"Error: Unsupported FaaS type: {faas_type}")

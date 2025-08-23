@@ -164,7 +164,8 @@ def deploy_to_github(workflow_data):
     for func_name, func_data in workflow_data['FunctionList'].items():
         server_name = func_data['FaaSServer']
         server_config = workflow_data['ComputeServers'][server_name]
-        if server_config['FaaSType'].lower() == 'githubactions':
+        faas_type = server_config['FaaSType'].lower()
+        if faas_type in ['githubactions', 'github_actions', 'github']:
             github_functions[func_name] = func_data
     
     if not github_functions:
@@ -190,6 +191,9 @@ def deploy_to_github(workflow_data):
             actual_func_name = func_data['FunctionName']
             
             # Create workflow file
+            # Get container image, with fallback to default
+            container_image = workflow_data.get('ActionContainers', {}).get(func_name, 'ghcr.io/faasr/github-actions-tidyverse')
+            
             workflow_content = f"""name: {func_name}
 
 on:
@@ -201,7 +205,7 @@ on:
 jobs:
   run_docker_image:
     runs-on: ubuntu-latest
-    container: {workflow_data['ActionContainers'][func_name]}
+    container: {container_image}
     env:
       SECRET_PAYLOAD: ${{{{ secrets.SECRET_PAYLOAD }}}}
       GITHUB_PAT: ${{{{ secrets.PAT }}}}
@@ -280,7 +284,8 @@ def deploy_to_aws(workflow_data):
     for func_name, func_data in workflow_data['FunctionList'].items():
         server_name = func_data['FaaSServer']
         server_config = workflow_data['ComputeServers'][server_name]
-        if server_config['FaaSType'].lower() == 'lambda':
+        faas_type = server_config['FaaSType'].lower()
+        if faas_type in ['lambda', 'aws_lambda', 'aws']:
             lambda_functions[func_name] = func_data
     
     if not lambda_functions:
@@ -392,7 +397,8 @@ def deploy_to_ow(workflow_data):
     for func_name, func_data in workflow_data['FunctionList'].items():
         server_name = func_data['FaaSServer']
         server_config = workflow_data['ComputeServers'][server_name]
-        if server_config['FaaSType'].lower() == 'openwhisk':
+        faas_type = server_config['FaaSType'].lower()
+        if faas_type in ['openwhisk', 'open_whisk', 'ow']:
             ow_functions[func_name] = func_data
     
     if not ow_functions:
@@ -429,12 +435,15 @@ def deploy_to_ow(workflow_data):
                 check_cmd = f"wsk action get {func_name} --insecure >/dev/null 2>&1"
                 exists = subprocess.run(check_cmd, shell=True, env=env).returncode == 0
                 
+                # Get container image, with fallback to default
+                container_image = workflow_data.get('ActionContainers', {}).get(func_name, 'ghcr.io/faasr/openwhisk-tidyverse')
+                
                 if exists:
                     # Update existing action (add --insecure flag)
-                    cmd = f"wsk action update {func_name} --docker {workflow_data['ActionContainers'][func_name]} --insecure"
+                    cmd = f"wsk action update {func_name} --docker {container_image} --insecure"
                 else:
                     # Create new action (add --insecure flag)
-                    cmd = f"wsk action create {func_name} --docker {workflow_data['ActionContainers'][func_name]} --insecure"
+                    cmd = f"wsk action create {func_name} --docker {container_image} --insecure"
                 
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True, env=env)
                 
@@ -473,11 +482,11 @@ def main():
     # Deploy to each platform found
     for faas_type in faas_types:
         print(f"\nDeploying to {faas_type}...")
-        if faas_type == 'lambda':
+        if faas_type in ['lambda', 'aws_lambda', 'aws']:
             deploy_to_aws(workflow_data)
-        elif faas_type == 'githubactions':
+        elif faas_type in ['githubactions', 'github_actions', 'github']:
             deploy_to_github(workflow_data)
-        elif faas_type == 'openwhisk':
+        elif faas_type in ['openwhisk', 'open_whisk', 'ow']:
             deploy_to_ow(workflow_data)
         else:
             print(f"Warning: Unknown FaaSType '{faas_type}' - skipping")
