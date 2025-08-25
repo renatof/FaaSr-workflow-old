@@ -31,7 +31,7 @@
             "FaaSServer": "My_GitHub_Account",
             "Type": "R",
             "Arguments": {
-                "folder": "project1",
+                "folder": "project2",
                 "output1": "sample1.csv",
                 "output2": "sample2.csv"
             },
@@ -45,7 +45,7 @@
             "FaaSServer": "My_Lambda_Account",
             "Type": "R",
             "Arguments": {
-                "folder": "project1",
+                "folder": "project2",
                 "output1": "sample1_lambda.csv",
                 "output2": "sample2_lambda.csv"
             },
@@ -58,7 +58,7 @@
             "FaaSServer": "My_GitHub_Account",
             "Type": "R",
             "Arguments": {
-                "folder": "project1",
+                "folder": "project2",
                 "input1": "sample1.csv",
                 "input2": "sample2.csv",
                 "output": "sum.csv"
@@ -70,7 +70,7 @@
             "FaaSServer": "My_Lambda_Account",
             "Type": "R",
             "Arguments": {
-                "folder": "project1",
+                "folder": "project2",
                 "input1": "sample1_lambda.csv",
                 "input2": "sample2_lambda.csv",
                 "output": "sum.csv"
