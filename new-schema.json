@@ -29,6 +29,7 @@
         "start_github": {
             "FunctionName": "create_sample_data",
             "FaaSServer": "My_GitHub_Account",
+            "Type": "R",
             "Arguments": {
                 "folder": "project1",
                 "output1": "sample1.csv",
@@ -42,6 +43,7 @@
         "start_lambda": {
             "FunctionName": "create_sample_data",
             "FaaSServer": "My_Lambda_Account",
+            "Type": "R",
             "Arguments": {
                 "folder": "project1",
                 "output1": "sample1_lambda.csv",
@@ -54,6 +56,7 @@
         "sum_github": {
             "FunctionName": "compute_sum",
             "FaaSServer": "My_GitHub_Account",
+            "Type": "R",
             "Arguments": {
                 "folder": "project1",
                 "input1": "sample1.csv",
@@ -65,6 +68,7 @@
         "sum_lambda": {
             "FunctionName": "compute_sum",
             "FaaSServer": "My_Lambda_Account",
+            "Type": "R",
             "Arguments": {
                 "folder": "project1",
                 "input1": "sample1_lambda.csv",
