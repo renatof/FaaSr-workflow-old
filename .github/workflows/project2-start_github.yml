@@ -18,4 +18,5 @@ jobs:
     steps:
     - name: run Rscript
       run: |
+        cd /action
         Rscript faasr_start_invoke_github-actions.R
