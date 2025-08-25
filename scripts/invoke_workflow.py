@@ -98,11 +98,11 @@ def build_faasr_payload(workflow_data, mask_secrets_for_github=False):
     
     return payload
 
-def trigger_github_actions(workflow_data, function_name):
+def trigger_github_actions(workflow_data, action_name):
     """Trigger a GitHub Actions workflow."""
-    # Get function data
-    func_data = workflow_data['FunctionList'][function_name]
-    server_name = func_data['FaaSServer']
+    # Get action data
+    action_data = workflow_data['ActionList'][action_name]
+    server_name = action_data['FaaSServer']
     server_config = workflow_data['ComputeServers'][server_name]
     
     # Get GitHub credentials and repo info
@@ -112,8 +112,9 @@ def trigger_github_actions(workflow_data, function_name):
     repo = f"{username}/{reponame}"
     branch = server_config.get('Branch', 'main')  # Default to 'main' if Branch not specified
     
-    # Use function name directly for workflow name
-    workflow_name = f"{function_name}.yml"
+    # Use WorkflowName prefix with action name for workflow name
+    workflow_name_prefix = workflow_data.get('WorkflowName', 'default')
+    workflow_name = f"{workflow_name_prefix}-{action_name}.yml"
 
     # Create payload with credentials and mask secrets for GitHub Actions
     payload = build_faasr_payload(workflow_data, mask_secrets_for_github=True)
@@ -156,11 +157,11 @@ def get_github_token():
         sys.exit(1)
     return token
 
-def trigger_lambda(workflow_data, function_name):
+def trigger_lambda(workflow_data, action_name):
     """Trigger an AWS Lambda function."""
-    # Get function data
-    func_data = workflow_data['FunctionList'][function_name]
-    server_name = func_data['FaaSServer']
+    # Get action data
+    action_data = workflow_data['ActionList'][action_name]
+    server_name = action_data['FaaSServer']
     server_config = workflow_data['ComputeServers'][server_name]
     
     # Get AWS credentials from environment variables (same as deploy script)
@@ -168,8 +169,9 @@ def trigger_lambda(workflow_data, function_name):
     aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
     aws_region = server_config.get('Region', 'us-east-1')
     
-    # Use function name directly
-    lambda_function_name = function_name
+    # Use WorkflowName prefix with action name for Lambda function name
+    workflow_name_prefix = workflow_data.get('WorkflowName', 'default')
+    lambda_function_name = f"{workflow_name_prefix}-{action_name}"
     
     # Create payload with credentials
     payload = build_faasr_payload(workflow_data)
@@ -241,11 +243,11 @@ def trigger_lambda(workflow_data, function_name):
         print(f"✗ Error triggering Lambda function: {str(e)}")
         sys.exit(1)
 
-def trigger_openwhisk(workflow_data, function_name):
+def trigger_openwhisk(workflow_data, action_name):
     """Trigger an OpenWhisk action."""
-    # Get function data
-    func_data = workflow_data['FunctionList'][function_name]
-    server_name = func_data['FaaSServer']
+    # Get action data
+    action_data = workflow_data['ActionList'][action_name]
+    server_name = action_data['FaaSServer']
     server_config = workflow_data['ComputeServers'][server_name]
     
     # Get OpenWhisk credentials from server config
@@ -272,7 +274,11 @@ def trigger_openwhisk(workflow_data, function_name):
         # Convert http to https if server requires it
         endpoint = endpoint.replace('http://', 'https://')
     
-    url = f"{endpoint}/api/v1/namespaces/{namespace}/actions/{function_name}?blocking=false&result=false"
+    # Use WorkflowName prefix with action name for OpenWhisk action name
+    workflow_name_prefix = workflow_data.get('WorkflowName', 'default')
+    openwhisk_action_name = f"{workflow_name_prefix}-{action_name}"
+    
+    url = f"{endpoint}/api/v1/namespaces/{namespace}/actions/{openwhisk_action_name}?blocking=false&result=false"
     
   
     payload = build_faasr_payload(workflow_data)
@@ -289,7 +295,7 @@ def trigger_openwhisk(workflow_data, function_name):
     }
     
     try:
-        print(f"Invoking OpenWhisk action: {function_name}")
+        print(f"Invoking OpenWhisk action: {openwhisk_action_name}")
         print(f"Debug: Using namespace: {namespace}")
         print(f"Debug: URL: {url}")
         
@@ -302,7 +308,7 @@ def trigger_openwhisk(workflow_data, function_name):
         )
         
         if response.status_code in [200, 202]:
-            print(f"✓ Successfully invoked OpenWhisk action: {function_name}")
+            print(f"✓ Successfully invoked OpenWhisk action: {openwhisk_action_name}")
             if response.text:
                 print(f"Response: {response.text}")
         else:
@@ -326,17 +332,17 @@ def main():
         print("Error: No FunctionInvoke specified in workflow file")
         sys.exit(1)
     
-    if function_invoke not in workflow_data['FunctionList']:
-        print(f"Error: FunctionInvoke '{function_invoke}' not found in FunctionList")
+    if function_invoke not in workflow_data['ActionList']:
+        print(f"Error: FunctionInvoke '{function_invoke}' not found in ActionList")
         sys.exit(1)
     
-    # Get function data
-    func_data = workflow_data['FunctionList'][function_invoke]
-    server_name = func_data['FaaSServer']
+    # Get action data
+    action_data = workflow_data['ActionList'][function_invoke]
+    server_name = action_data['FaaSServer']
     server_config = workflow_data['ComputeServers'][server_name]
     faas_type = server_config['FaaSType'].lower()
     
-    print(f"Triggering function '{function_invoke}' on {faas_type}...")
+    print(f"Triggering action '{function_invoke}' on {faas_type}...")
     
     # Trigger based on FaaS type
     if faas_type in ['githubactions', 'github_actions', 'github']:
@@ -349,7 +355,7 @@ def main():
         print(f"Error: Unsupported FaaS type: {faas_type}")
         sys.exit(1)
     
-    print("Function trigger completed successfully!")
+    print("Action trigger completed successfully!")
 
 if __name__ == '__main__':
     main() 
