@@ -485,7 +485,7 @@ def deploy_to_aws(workflow_data):
             prefixed_func_name = f"{json_prefix}-{action_name}"
             
             # Get container image, with fallback to default Lambda image
-            container_image = workflow_data.get('ActionContainers', {}).get(action_name, '145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest')
+            container_image = workflow_data.get('ActionContainers', {}).get(action_name, '145342739029.dkr.ecr.us-east-1.amazonaws.com/faasr-python-base-r')
             
             # Check payload size before deployment
             payload_size = len(secret_payload.encode('utf-8'))
