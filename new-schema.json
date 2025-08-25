@@ -79,8 +79,10 @@
         }
     },
     "ActionContainers": {
-        "start_github": "ghcr.io/faasr/github-actions-tidyverse",
-        "sum_github": "ghcr.io/faasr/github-actions-tidyverse"
+        "start_github": "ghcr.io/nolcut/ga-rpc-python-base-r:dev",
+        "sum_github": "ghcr.io/nolcut/ga-rpc-python-base-r:dev",
+        "start_lambda": "145342739029.dkr.ecr.us-east-1.amazonaws.com/faasr-python-base-r",
+        "sum_lambda": "145342739029.dkr.ecr.us-east-1.amazonaws.com/faasr-python-base-r"
     },
     "FunctionGitRepo": {
         "create_sample_data": "FaaSr/FaaSr-tutorial",
