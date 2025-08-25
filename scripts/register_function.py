@@ -190,11 +190,14 @@ def deploy_to_github(workflow_data):
         for func_name, func_data in github_functions.items():
             actual_func_name = func_data['FunctionName']
             
+            # Create prefixed function name using json_prefix-func_name format
+            prefixed_func_name = f"{json_prefix}-{func_name}"
+            
             # Create workflow file
             # Get container image, with fallback to default
             container_image = workflow_data.get('ActionContainers', {}).get(func_name, 'ghcr.io/faasr/github-actions-tidyverse')
             
-            workflow_content = f"""name: {func_name}
+            workflow_content = f"""name: {prefixed_func_name}
 
 on:
   workflow_dispatch:
@@ -219,7 +222,7 @@ jobs:
 """
             
             # Create or update the workflow file
-            workflow_path = f".github/workflows/{func_name}.yml"
+            workflow_path = f".github/workflows/{prefixed_func_name}.yml"
             try:
                 # Try to get the file first
                 contents = repo.get_contents(workflow_path)
@@ -233,7 +236,7 @@ jobs:
                     print(f"File {workflow_path} exists, updating...")
                     repo.update_file(
                         path=workflow_path,
-                        message=f"Update workflow for {func_name}",
+                        message=f"Update workflow for {prefixed_func_name}",
                         content=workflow_content,
                         sha=contents.sha,
                         branch=default_branch
@@ -245,7 +248,7 @@ jobs:
                     print(f"File {workflow_path} doesn't exist, creating...")
                     repo.create_file(
                         path=workflow_path,
-                        message=f"Add workflow for {func_name}",
+                        message=f"Add workflow for {prefixed_func_name}",
                         content=workflow_content,
                         branch=default_branch
                     )
@@ -259,7 +262,7 @@ jobs:
                         print(f"HTTP status: {e.status}")
                     raise e
                     
-            print(f"Successfully deployed {actual_func_name} to GitHub")
+            print(f"Successfully deployed {prefixed_func_name} to GitHub")
             
     except Exception as e:
         print(f"Error deploying to GitHub: {str(e)}")
@@ -275,6 +278,10 @@ def deploy_to_aws(workflow_data):
         aws_secret_access_key=aws_secret_key,
         region_name=aws_region
     )
+    
+    # Get the JSON file prefix for function naming
+    workflow_file = workflow_data['_workflow_file']
+    json_prefix = os.path.splitext(os.path.basename(workflow_file))[0]
     
     # Create secret payload (same as GitHub deployment)
     secret_payload = create_secret_payload(workflow_data)
@@ -297,6 +304,9 @@ def deploy_to_aws(workflow_data):
         try:
             actual_func_name = func_data['FunctionName']
             
+            # Create prefixed function name using json_prefix-func_name format
+            prefixed_func_name = f"{json_prefix}-{func_name}"
+            
             # Check payload size before deployment
             payload_size = len(secret_payload.encode('utf-8'))
             if payload_size > 4000:  # Lambda env var limit is ~4KB
@@ -311,7 +321,7 @@ def deploy_to_aws(workflow_data):
             # Create or update Lambda function
             try:
                 lambda_client.create_function(
-                    FunctionName=func_name,
+                    FunctionName=prefixed_func_name,
                     PackageType='Image',
                     Code={'ImageUri': '145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'},
                     Role=role_arn,
@@ -319,21 +329,21 @@ def deploy_to_aws(workflow_data):
                     MemorySize=1024,  
                     Environment={'Variables': environment_vars}
                 )
-                print(f"Successfully created {func_name} on AWS Lambda")
+                print(f"Successfully created {prefixed_func_name} on AWS Lambda")
             except lambda_client.exceptions.ResourceConflictException:
                 # Update existing function
                 lambda_client.update_function_code(
-                    FunctionName=func_name,
+                    FunctionName=prefixed_func_name,
                     ImageUri='145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'
                 )
                 
                 # Wait for the function update to complete
-                print(f"Waiting for {func_name} code update to complete...")
+                print(f"Waiting for {prefixed_func_name} code update to complete...")
                 max_attempts = 60  # Wait up to 5 minutes
                 attempt = 0
                 while attempt < max_attempts:
                     try:
-                        response = lambda_client.get_function(FunctionName=func_name)
+                        response = lambda_client.get_function(FunctionName=prefixed_func_name)
                         state = response['Configuration']['State']
                         last_update_status = response['Configuration']['LastUpdateStatus']
                         
@@ -350,18 +360,18 @@ def deploy_to_aws(workflow_data):
                         attempt += 1
                 
                 if attempt >= max_attempts:
-                    print(f"Timeout waiting for {func_name} update to complete")
+                    print(f"Timeout waiting for {prefixed_func_name} update to complete")
                     sys.exit(1)
                 
                 # Now update environment variables
                 lambda_client.update_function_configuration(
-                    FunctionName=func_name,
+                    FunctionName=prefixed_func_name,
                     Environment={'Variables': environment_vars}
                 )
-                print(f"Successfully updated {func_name} on AWS Lambda")
+                print(f"Successfully updated {prefixed_func_name} on AWS Lambda")
             
         except Exception as e:
-            print(f"Error deploying {func_name} to AWS: {str(e)}")
+            print(f"Error deploying {prefixed_func_name} to AWS: {str(e)}")
             # Print additional debugging information
             if "RequestEntityTooLargeException" in str(e):
                 print(f"Payload too large. SECRET_PAYLOAD size: {len(secret_payload)} bytes")
@@ -429,10 +439,13 @@ def deploy_to_ow(workflow_data):
         try:
             actual_func_name = func_data['FunctionName']
             
+            # Create prefixed function name using json_prefix-func_name format
+            prefixed_func_name = f"{json_prefix}-{func_name}"
+            
             # Create or update OpenWhisk action using wsk CLI
             try:
                 # First check if action exists (add --insecure flag)
-                check_cmd = f"wsk action get {func_name} --insecure >/dev/null 2>&1"
+                check_cmd = f"wsk action get {prefixed_func_name} --insecure >/dev/null 2>&1"
                 exists = subprocess.run(check_cmd, shell=True, env=env).returncode == 0
                 
                 # Get container image, with fallback to default
@@ -440,24 +453,24 @@ def deploy_to_ow(workflow_data):
                 
                 if exists:
                     # Update existing action (add --insecure flag)
-                    cmd = f"wsk action update {func_name} --docker {container_image} --insecure"
+                    cmd = f"wsk action update {prefixed_func_name} --docker {container_image} --insecure"
                 else:
                     # Create new action (add --insecure flag)
-                    cmd = f"wsk action create {func_name} --docker {container_image} --insecure"
+                    cmd = f"wsk action create {prefixed_func_name} --docker {container_image} --insecure"
                 
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True, env=env)
                 
                 if result.returncode != 0:
                     raise Exception(f"Failed to {'update' if exists else 'create'} action: {result.stderr}")
                 
-                print(f"Successfully deployed {func_name} to OpenWhisk")
+                print(f"Successfully deployed {prefixed_func_name} to OpenWhisk")
                 
             except Exception as e:
-                print(f"Error deploying {func_name} to OpenWhisk: {str(e)}")
+                print(f"Error deploying {prefixed_func_name} to OpenWhisk: {str(e)}")
                 sys.exit(1)
                 
         except Exception as e:
-            print(f"Error processing {func_name}: {str(e)}")
+            print(f"Error processing {prefixed_func_name}: {str(e)}")
             sys.exit(1)
 
 def main():
