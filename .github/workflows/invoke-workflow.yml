@@ -1,4 +1,4 @@
-name: Trigger FaaSr Function
+name: Invoke FaaSr Workflow
 
 on:
   workflow_dispatch:
@@ -59,4 +59,4 @@ jobs:
             MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
             GITHUB_TOKEN: ${{ secrets.PAT }}
         run: |
-          python scripts/trigger_function.py --workflow-file ${{ github.event.inputs.workflow_file }} 
+          python scripts/invoke_workflow.py --workflow-file ${{ github.event.inputs.workflow_file }} 
