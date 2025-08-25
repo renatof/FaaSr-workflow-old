@@ -18,8 +18,8 @@ This repository contains two powerful GitHub Actions workflows for deploying and
 
 The FaaSr CLI provides two main workflows:
 
-1. **Deploy Functions** (`deploy-functions.yml`) - Deploys your FaaSr functions to supported cloud platforms
-2. **Trigger Function** (`trigger-function.yml`) - Executes deployed functions with your workflow configuration
+1. **Register Functions** (`register-function.yml`) - Registers your FaaSr functions to supported cloud platforms
+2. **Invoke Function** (`invoke-function.yml`) - Executes deployed functions with your workflow configuration
 
 ### Supported Platforms
 
@@ -62,16 +62,16 @@ Create JSON configuration files in your repository root (examples: `project1.jso
 
 ## 🚀 Workflows
 
-### Deploy Functions Workflow
+### Register Functions Workflow
 
-**File:** `.github/workflows/deploy-functions.yml`
+**File:** `.github/workflows/register-function.yml`
 
-**Purpose:** Deploys FaaSr functions to specified cloud platforms based on your workflow configuration.
+**Purpose:** Registers FaaSr functions to specified cloud platforms based on your workflow configuration.
 
 #### How to Run:
 
 1. Go to your repository's **Actions** tab
-2. Select **"Deploy FaaSr Functions"** workflow
+2. Select **"Register FaaSr Functions"** workflow
 3. Click **"Run workflow"**
 4. Enter parameters:
    - **Workflow file name**: Name of your JSON configuration file (default: `project1.json`)
@@ -82,7 +82,7 @@ Create JSON configuration files in your repository root (examples: `project1.jso
 - Reads your workflow configuration file
 - Identifies target platforms (Lambda, GitHub Actions, OpenWhisk)
 - Installs required dependencies and tools
-- Deploys functions to each specified platform:
+- Registers functions to each specified platform:
   - **AWS Lambda**: Creates/updates Lambda functions with container images
   - **GitHub Actions**: Creates workflow files in `.github/workflows/`
   - **OpenWhisk**: Creates/updates actions using the OpenWhisk CLI
@@ -92,16 +92,16 @@ Create JSON configuration files in your repository root (examples: `project1.jso
 Workflow file: project1.json
 ```
 
-### Trigger Function Workflow
+### Invoke Function Workflow
 
-**File:** `.github/workflows/trigger-function.yml`
+**File:** `.github/workflows/invoke-function.yml`
 
-**Purpose:** Executes a deployed FaaSr function with your workflow configuration.
+**Purpose:** Executes a registered FaaSr function with your workflow configuration.
 
 #### How to Run:
 
 1. Go to your repository's **Actions** tab
-2. Select **"Trigger FaaSr Function"** workflow
+2. Select **"Invoke FaaSr Function"** workflow
 3. Click **"Run workflow"**
 4. Enter parameters:
    - **Workflow file name**: Name of your JSON configuration file (default: `payload.json`)
@@ -233,14 +233,14 @@ The workflows will automatically replace these with actual values from your repo
 }
 ```
 
-2. Run Deploy workflow with `github-only.json`
-3. Run Trigger workflow with `github-only.json`
+2. Run Register Functions workflow with `github-only.json`
+3. Run Invoke Function workflow with `github-only.json`
 
 ### Example 2: Multi-platform deployment
 
 1. Create `multi-platform.json` with both GitHub Actions and AWS Lambda servers
-2. Run Deploy workflow - functions will be deployed to both platforms
-3. Run Trigger workflow - will execute on the platform specified by `FunctionInvoke`
+2. Run Register Functions workflow - functions will be registered to both platforms
+3. Run Invoke Function workflow - will execute on the platform specified by `FunctionInvoke`
 
 ## 🔧 Troubleshooting
 
@@ -249,13 +249,13 @@ The workflows will automatically replace these with actual values from your repo
 1. **Missing secrets**: Ensure all required secrets are configured in your repository
 2. **Invalid JSON**: Validate your configuration files using a JSON validator
 3. **Permission errors**: Check that your tokens/keys have appropriate permissions
-4. **Function not found**: Verify function names match between config and deployed functions
+4. **Function not found**: Verify function names match between config and registered functions
 
 ### Debug Information:
 
 Both workflows provide detailed logging. Check the Actions logs for:
 - Configuration file parsing
-- Platform-specific deployment steps
+- Platform-specific registration steps
 - Function invocation responses
 - Error messages and stack traces
 
