@@ -272,33 +272,12 @@ def deploy_to_aws(workflow_data):
     # Get AWS credentials
     aws_access_key, aws_secret_key, aws_region, role_arn = get_aws_credentials()
     
-    print(f"AWS Configuration:")
-    print(f"  Region: {aws_region}")
-    print(f"  Role ARN: {role_arn}")
-    print(f"  Access Key ID: {aws_access_key[:10]}..." if aws_access_key else "  Access Key ID: None")
-    
     lambda_client = boto3.client(
         'lambda',
         aws_access_key_id=aws_access_key,
         aws_secret_access_key=aws_secret_key,
         region_name=aws_region
     )
-    
-    # Test IAM role accessibility
-    try:
-        iam_client = boto3.client(
-            'iam',
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name=aws_region
-        )
-        # Extract role name from ARN
-        role_name = role_arn.split('/')[-1]
-        role_info = iam_client.get_role(RoleName=role_name)
-        print(f"IAM Role validated: {role_info['Role']['RoleName']}")
-    except Exception as e:
-        print(f"Warning: Could not validate IAM role: {e}")
-        print("Proceeding anyway...")
     
     # Get the JSON file prefix for function naming
     workflow_file = workflow_data['_workflow_file']
@@ -320,13 +299,6 @@ def deploy_to_aws(workflow_data):
         print("No functions found for AWS Lambda deployment")
         return
     
-    # List existing functions for debugging
-    try:
-        existing_functions = lambda_client.list_functions()
-        print(f"Existing Lambda functions: {[f['FunctionName'] for f in existing_functions['Functions']]}")
-    except Exception as e:
-        print(f"Could not list existing functions: {e}")
-    
     # Process each function in the workflow
     for func_name, func_data in lambda_functions.items():
         try:
@@ -346,25 +318,11 @@ def deploy_to_aws(workflow_data):
                 'SECRET_PAYLOAD': secret_payload
             }
             
-            # Create or update Lambda function
+            # Check if function already exists first
             try:
-                print(f"Attempting to create Lambda function: {prefixed_func_name}")
-                print(f"Using role ARN: {role_arn}")
-                print(f"Function name length: {len(prefixed_func_name)}")
-                
-                lambda_client.create_function(
-                    FunctionName=prefixed_func_name,
-                    PackageType='Image',
-                    Code={'ImageUri': '145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'},
-                    Role=role_arn,
-                    Timeout=900,  
-                    MemorySize=1024,  
-                    Environment={'Variables': environment_vars}
-                )
-                print(f"Successfully created {prefixed_func_name} on AWS Lambda")
-            except lambda_client.exceptions.ResourceConflictException:
-                # Update existing function
+                existing_func = lambda_client.get_function(FunctionName=prefixed_func_name)
                 print(f"Function {prefixed_func_name} already exists, updating...")
+                # Update existing function
                 lambda_client.update_function_code(
                     FunctionName=prefixed_func_name,
                     ImageUri='145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'
@@ -402,24 +360,32 @@ def deploy_to_aws(workflow_data):
                     Environment={'Variables': environment_vars}
                 )
                 print(f"Successfully updated {prefixed_func_name} on AWS Lambda")
+                
+            except lambda_client.exceptions.ResourceNotFoundException:
+                # Function doesn't exist, create it
+                print(f"Creating new Lambda function: {prefixed_func_name}")
+                # Add a small delay to ensure role propagation
+                time.sleep(2)
+                
+                lambda_client.create_function(
+                    FunctionName=prefixed_func_name,
+                    PackageType='Image',
+                    Code={'ImageUri': '145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'},
+                    Role=role_arn,
+                    Timeout=900,  
+                    MemorySize=1024,  
+                    Environment={'Variables': environment_vars}
+                )
+                print(f"Successfully created {prefixed_func_name} on AWS Lambda")
             
         except Exception as e:
             print(f"Error deploying {prefixed_func_name} to AWS: {str(e)}")
             # Print additional debugging information
-            print(f"Function name being used: '{prefixed_func_name}'")
-            print(f"Role ARN being used: '{role_arn}'")
-            print(f"AWS region: '{aws_region}'")
             if "RequestEntityTooLargeException" in str(e):
                 print(f"Payload too large. SECRET_PAYLOAD size: {len(secret_payload)} bytes")
                 print("Consider reducing workflow complexity or using external storage")
             elif "InvalidParameterValueException" in str(e):
                 print("Check Lambda configuration parameters (memory, timeout, role)")
-                if "role" in str(e).lower():
-                    print("This appears to be a role-related issue.")
-                    print("Verify that:")
-                    print("1. The role ARN is correct and exists")
-                    print("2. The role has the necessary trust policy for Lambda")
-                    print("3. The role has the required permissions")
             sys.exit(1)
 
 
