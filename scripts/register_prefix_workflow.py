@@ -364,19 +364,57 @@ def deploy_to_aws(workflow_data):
             except lambda_client.exceptions.ResourceNotFoundException:
                 # Function doesn't exist, create it
                 print(f"Creating new Lambda function: {prefixed_func_name}")
-                # Add a small delay to ensure role propagation
-                time.sleep(2)
                 
-                lambda_client.create_function(
-                    FunctionName=prefixed_func_name,
-                    PackageType='Image',
-                    Code={'ImageUri': '145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'},
-                    Role=role_arn,
-                    Timeout=900,  
-                    MemorySize=1024,  
-                    Environment={'Variables': environment_vars}
-                )
-                print(f"Successfully created {prefixed_func_name} on AWS Lambda")
+                # Let's try to create a function with the same parameters as the working one
+                # First, let's examine the working function to see what's different
+                try:
+                    working_func = lambda_client.get_function(FunctionName='start_lambda')
+                    working_role = working_func['Configuration']['Role']
+                    print(f"Working function 'start_lambda' uses role: {working_role}")
+                    print(f"Our role ARN: {role_arn}")
+                    print(f"Roles match: {working_role == role_arn}")
+                    
+                    # Try using the exact same role as the working function
+                    print(f"Attempting to create {prefixed_func_name} with working function's role...")
+                    lambda_client.create_function(
+                        FunctionName=prefixed_func_name,
+                        PackageType='Image',
+                        Code={'ImageUri': '145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'},
+                        Role=working_role,  # Use the exact role from working function
+                        Timeout=900,  
+                        MemorySize=1024,  
+                        Environment={'Variables': environment_vars}
+                    )
+                    print(f"Successfully created {prefixed_func_name} using working function's role")
+                    
+                except Exception as role_test_error:
+                    print(f"Failed with working function's role: {role_test_error}")
+                    
+                    # If that fails too, try with minimal parameters
+                    print("Trying with minimal parameters...")
+                    try:
+                        lambda_client.create_function(
+                            FunctionName=prefixed_func_name,
+                            PackageType='Image',
+                            Code={'ImageUri': '145342739029.dkr.ecr.us-east-1.amazonaws.com/aws-lambda-tidyverse:latest'},
+                            Role=role_arn,
+                            Timeout=300,  # Shorter timeout
+                            MemorySize=128,  # Minimal memory
+                        )
+                        print(f"Successfully created {prefixed_func_name} with minimal parameters")
+                        
+                        # Then update with full configuration
+                        lambda_client.update_function_configuration(
+                            FunctionName=prefixed_func_name,
+                            Timeout=900,
+                            MemorySize=1024,
+                            Environment={'Variables': environment_vars}
+                        )
+                        print(f"Updated {prefixed_func_name} with full configuration")
+                        
+                    except Exception as minimal_error:
+                        print(f"Even minimal creation failed: {minimal_error}")
+                        raise minimal_error
             
         except Exception as e:
             print(f"Error deploying {prefixed_func_name} to AWS: {str(e)}")
