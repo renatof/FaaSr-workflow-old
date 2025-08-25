@@ -6,6 +6,12 @@
             "ActionRepoName": "FaaSr-cli",
             "Branch": "main",
             "Token": "My_GitHub_Account_TOKEN"
+        },
+        "My_Lambda_Account": {
+            "FaaSType": "Lambda",
+            "Region": "us-east-1",
+            "AccessKey": "My_Lambda_Account_ACCESS_KEY",
+            "SecretKey": "My_Lambda_Account_SECRET_KEY"
         }
     },
     "DataStores": {
@@ -19,23 +25,49 @@
         }
     },
     "FunctionList": {
-        "start": {
+        "start_github": {
             "FunctionName": "create_sample_data",
             "FaaSServer": "My_GitHub_Account",
             "Arguments": {
-                "folder": "tutorial",
+                "folder": "project1",
                 "output1": "sample1.csv",
                 "output2": "sample2.csv"
             },
-            "InvokeNext": "sum"
+            "InvokeNext": [
+                "sum_github",
+                "start_lambda"
+            ]
         },
-        "sum": {
+        "start_lambda": {
+            "FunctionName": "create_sample_data",
+            "FaaSServer": "My_Lambda_Account",
+            "Arguments": {
+                "folder": "project1",
+                "output1": "sample1_lambda.csv",
+                "output2": "sample2_lambda.csv"
+            },
+            "InvokeNext": "sum_lambda"
+        },
+        "sum_github": {
             "FunctionName": "compute_sum",
             "FaaSServer": "My_GitHub_Account",
             "Arguments": {
-                "folder": "tutorial",
+                "folder": "project1",
                 "input1": "sample1.csv",
                 "input2": "sample2.csv",
+                "output": "sum.csv"
+            },
+            "InvokeNext": [
+
+            ]
+        },
+        "sum_lambda": {
+            "FunctionName": "compute_sum",
+            "FaaSServer": "My_Lambda_Account",
+            "Arguments": {
+                "folder": "project1",
+                "input1": "sample1_lambda.csv",
+                "input2": "sample2_lambda.csv",
                 "output": "sum.csv"
             },
             "InvokeNext": [
@@ -44,14 +76,14 @@
         }
     },
     "ActionContainers": {
-        "start": "ghcr.io/faasr/github-actions-tidyverse",
-        "sum": "ghcr.io/faasr/github-actions-tidyverse"
+        "start_github": "ghcr.io/faasr/github-actions-tidyverse",
+        "sum_github": "ghcr.io/faasr/github-actions-tidyverse"
     },
     "FunctionGitRepo": {
         "create_sample_data": "FaaSr/FaaSr-tutorial",
         "compute_sum": "FaaSr/FaaSr-tutorial"
     },
-    "FunctionInvoke": "start",
+    "FunctionInvoke": "start_github",
     "InvocationID": "",
     "FaaSrLog": "FaaSrLog",
     "LoggingDataStore": "My_Minio_Bucket",
