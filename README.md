@@ -2,18 +2,6 @@
 
 This repository contains two powerful GitHub Actions workflows for deploying and triggering FaaSr (Function-as-a-Service for R) functions across multiple cloud platforms.
 
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Setup](#setup)
-- [Workflows](#workflows)
-  - [Deploy Functions Workflow](#deploy-functions-workflow)
-  - [Trigger Function Workflow](#trigger-function-workflow)
-- [Configuration Files](#configuration-files)
-- [Usage Examples](#usage-examples)
-- [Troubleshooting](#troubleshooting)
-
 ## 🔍 Overview
 
 The FaaSr CLI provides two main workflows:
