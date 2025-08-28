@@ -154,8 +154,10 @@ def trigger_github_actions(workflow_data, action_name):
     # If UseSecretStore == False, include secrets in overwritten fields
     # If UseSecretStore == True, don't send secrets to next action
     if not server_config.get("UseSecretStore"):
-        overwritten_fields["ComputeServers"] = workflow_data.get("ComputeServers", {})
-        overwritten_fields["DataStores"] = workflow_data.get("DataStores", {})
+        # Build payload with credential replacement to get processed ComputeServers and DataStores
+        processed_payload = build_faasr_payload(workflow_data, mask_secrets_for_github=False)
+        overwritten_fields["ComputeServers"] = processed_payload.get("ComputeServers", {})
+        overwritten_fields["DataStores"] = processed_payload.get("DataStores", {})
 
     # Ensure we have valid JSON content
     if not overwritten_fields:
