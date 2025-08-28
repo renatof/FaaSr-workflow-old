@@ -30,7 +30,7 @@ def read_workflow_file(file_path):
 
 def get_credentials():
     """Get credentials from environment variables."""
-    credentials = {
+    return {
         "My_GitHub_Account_TOKEN": os.getenv('GITHUB_TOKEN'),
         "My_Minio_Bucket_ACCESS_KEY": os.getenv('MINIO_ACCESS_KEY'),
         "My_Minio_Bucket_SECRET_KEY": os.getenv('MINIO_SECRET_KEY'),
@@ -38,12 +38,6 @@ def get_credentials():
         "My_Lambda_Account_ACCESS_KEY": os.getenv('AWS_ACCESS_KEY_ID', ''),
         "My_Lambda_Account_SECRET_KEY": os.getenv('AWS_SECRET_ACCESS_KEY', ''),
     }
-    
-    # Debug logging for MinIO credentials specifically
-    print(f"Debug: MINIO_ACCESS_KEY environment variable: {'SET' if credentials['My_Minio_Bucket_ACCESS_KEY'] else 'NOT SET'}")
-    print(f"Debug: MINIO_SECRET_KEY environment variable: {'SET' if credentials['My_Minio_Bucket_SECRET_KEY'] else 'NOT SET'}")
-    
-    return credentials
 
 def build_faasr_payload(workflow_data, mask_secrets_for_github=False):
     # Start with credentials at the top (matching R deployment style)
@@ -98,24 +92,10 @@ def build_faasr_payload(workflow_data, mask_secrets_for_github=False):
                 store_config['SecretKey'] = f"{store_key}_SECRET_KEY"
             else:
                 if store_key == 'My_Minio_Bucket':
-                    print(f"Debug: Processing DataStore '{store_key}'")
-                    print(f"Debug: Original AccessKey: {store_config.get('AccessKey', 'NOT SET')}")
-                    print(f"Debug: Original SecretKey: {store_config.get('SecretKey', 'NOT SET')}")
-                    
                     if credentials['My_Minio_Bucket_ACCESS_KEY']:
                         store_config['AccessKey'] = credentials['My_Minio_Bucket_ACCESS_KEY']
-                        print(f"Debug: Replaced AccessKey with environment value")
-                    else:
-                        print(f"Debug: WARNING - MINIO_ACCESS_KEY not available from environment!")
-                        
                     if credentials['My_Minio_Bucket_SECRET_KEY']:
                         store_config['SecretKey'] = credentials['My_Minio_Bucket_SECRET_KEY']
-                        print(f"Debug: Replaced SecretKey with environment value")
-                    else:
-                        print(f"Debug: WARNING - MINIO_SECRET_KEY not available from environment!")
-                    
-                    print(f"Debug: Final AccessKey: {store_config.get('AccessKey', 'NOT SET')}")
-                    print(f"Debug: Final SecretKey: {store_config.get('SecretKey', 'NOT SET')}")
     
     return payload
 
@@ -197,8 +177,6 @@ def trigger_github_actions(workflow_data, action_name):
         }
     }
     
-    print(f"Debug: Request URL: {url}")
-    print(f"Debug: Request Body: {body}")
     # Send request
     try:
         response = requests.post(url, headers=headers, json=body)
