@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/nolcut/ga-rpc-python-base-r:dev
     env:
-      GITHUB_PAT: ${{ secrets.PAT }}
+      TOKEN: ${{ secrets.PAT }}
       SECRET_PAYLOAD: ${{ secrets.SECRET_PAYLOAD }}
       OVERWRITTEN: ${{ github.event.inputs.OVERWRITTEN }}
       PAYLOAD_URL: ${{ github.event.inputs.PAYLOAD_URL }}
