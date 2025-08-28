@@ -97,6 +97,7 @@
     "test_list_folders": "nolcut/test-py"
   },
   "FunctionInvoke": "add_operation",
+  "InvocationID":"",
   "InvocationIDFromDate": "%Y%m%d%H%M",
   "FaaSrLog": "FaaSrLog",
   "LoggingDataStore": "My_Minio_Bucket",
