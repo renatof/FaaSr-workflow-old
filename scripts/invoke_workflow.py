@@ -174,6 +174,8 @@ def trigger_github_actions(workflow_data, action_name):
         }
     }
     
+    print(f"Debug: Request URL: {url}")
+    print(f"Debug: Request Body: {body}")
     # Send request
     try:
         response = requests.post(url, headers=headers, json=body)
