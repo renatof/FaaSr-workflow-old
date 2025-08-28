@@ -106,7 +106,7 @@ def trigger_github_actions(workflow_data, action_name):
     server_config = workflow_data['ComputeServers'][server_name]
     
     # Get GitHub credentials and repo info
-    pat = os.getenv('GITHUB_TOKEN')  # Use actual token from environment
+    pat = server_config.get('Token') or os.getenv('GITHUB_TOKEN')  # Use token from config or environment
     username = server_config['UserName']
     reponame = server_config['ActionRepoName']
     repo = f"{username}/{reponame}"
@@ -116,35 +116,99 @@ def trigger_github_actions(workflow_data, action_name):
     workflow_name_prefix = workflow_data.get('WorkflowName', 'default')
     workflow_name = f"{workflow_name_prefix}-{action_name}.yml"
 
-    # Create payload with credentials and mask secrets for GitHub Actions
+    # Create payload with credentials
     payload = build_faasr_payload(workflow_data, mask_secrets_for_github=True)
     
-    # Prepare request
-    url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow_name}/dispatches"
+    # Create overwritten fields structure similar to invoke_gh
+    overwritten_fields = payload.copy()
+    
+    # If UseSecretStore == True, don't send secrets to next action
+    if server_config.get("UseSecretStore"):
+        if "ComputeServers" in overwritten_fields:
+            del overwritten_fields["ComputeServers"]
+        if "DataStores" in overwritten_fields:
+            del overwritten_fields["DataStores"]
+    else:
+        overwritten_fields["ComputeServers"] = workflow_data.get("ComputeServers", {})
+        overwritten_fields["DataStores"] = workflow_data.get("DataStores", {})
+
+    json_overwritten = json.dumps(overwritten_fields)
+    
+    # Create inputs similar to invoke_gh method
+    # Construct GitHub raw file URL for the workflow JSON file
+    workflow_file_path = workflow_data.get('_workflow_file', '')
+    if workflow_file_path:
+        # Extract just the filename from the path
+        import os
+        workflow_filename = os.path.basename(workflow_file_path)
+        payload_url = f"{username}/{reponame}/{branch}/{workflow_filename}"
+    else:
+        payload_url = ""
+    
+    inputs = {
+        "OVERWRITTEN": json_overwritten,
+        "PAYLOAD_URL": payload_url,
+    }
+    
+    # Create URL for GitHub API
+    url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow_file}/dispatches"
     print(f"Debug: Request URL: {url}")
     
+    # Create headers for POST request
     headers = {
         "Authorization": f"token {pat}",
         "Accept": "application/vnd.github.v3+json",
         "X-GitHub-Api-Version": "2022-11-28"
     }
+    
+    # Create body for POST request
     body = {
         "ref": branch,
-        "inputs": {
-            "PAYLOAD": json.dumps(payload)
-        }
+        "inputs": inputs
     }
     
-    # Send request
+    # Send request with improved error handling
     try:
         response = requests.post(url, headers=headers, json=body)
+        
+        # Enhanced error handling based on invoke_gh method
         if response.status_code == 204:
-            print(f"Successfully triggered GitHub Actions workflow: {workflow_name}")
-        else:
-            print(f"Error triggering GitHub Actions workflow: {response.status_code} - {response.text}")
+            print(f"✓ Successfully triggered GitHub Actions workflow: {workflow_file}")
+        elif response.status_code == 401:
+            print("✗ GitHub Action: Authentication failed, check the credentials")
             sys.exit(1)
+        elif response.status_code == 404:
+            print(f"✗ GitHub Action: Cannot find the destination: "
+                  f"check repo: {repo}, workflow: {workflow_file}, "
+                  f"and branch: {branch}")
+            sys.exit(1)
+        elif response.status_code == 422:
+            try:
+                message = response.json().get("message")
+                if message:
+                    print(f"✗ GitHub Action: {message}")
+                else:
+                    print(f"✗ GitHub Action: Cannot find the destination; check ref {branch}")
+            except json.JSONDecodeError:
+                print(f"✗ GitHub Action: Cannot find the destination; check ref {branch}")
+            sys.exit(1)
+        else:
+            try:
+                if response.text:
+                    response_data = response.json()
+                    message = response_data.get("message")
+                    if message:
+                        print(f"✗ GitHub Action: {message}")
+                    else:
+                        print("✗ GitHub Action: Unknown error happens when invoke next function")
+                else:
+                    print("✗ GitHub Action: No response from GitHub")
+            except json.JSONDecodeError:
+                print(f"✗ GitHub Action: Error {response.status_code} - {response.text}")
+            sys.exit(1)
+            
     except Exception as e:
-        print(f"Error triggering GitHub Actions workflow: {str(e)}")
+        print(f"✗ Error triggering GitHub Actions workflow: {str(e)}")
         sys.exit(1)
 
 

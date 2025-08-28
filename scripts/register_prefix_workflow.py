@@ -374,28 +374,31 @@ def deploy_to_github(workflow_data):
             # Get container image, with fallback to default
             container_image = workflow_data.get('ActionContainers', {}).get(action_name, 'ghcr.io/faasr/github-actions-tidyverse')
             
-            workflow_content = f"""name: {prefixed_action_name}
+            workflow_content = f"""Running action: {prefixed_action_name}
 
 on:
   workflow_dispatch:
     inputs:
-      PAYLOAD:
-        description: 'Payload'
-        required: false
+      OVERWRITTEN:
+        description: 'overwritten fields'
+        required: true
+      PAYLOAD_URL:
+        description: 'url to payload'
+        required: true
 jobs:
   run_docker_image:
     runs-on: ubuntu-latest
     container: {container_image}
     env:
-      SECRET_PAYLOAD: ${{{{ secrets.SECRET_PAYLOAD }}}}
       GITHUB_PAT: ${{{{ secrets.PAT }}}}
-      PAYLOAD_REPO: ${{{{ vars.{json_prefix.upper()}_PAYLOAD_REPO }}}}
-      PAYLOAD: ${{{{ github.event.inputs.PAYLOAD }}}}
+      SECRET_PAYLOAD: ${{{{ secrets.SECRET_PAYLOAD }}}}
+      OVERWRITTEN: ${{ github.event.inputs.OVERWRITTEN }}
+      PAYLOAD_URL: ${{ github.event.inputs.PAYLOAD_URL }}
     steps:
-    - name: run Rscript
+    - name: run Python
       run: |
         cd /action
-        Rscript faasr_start_invoke_github-actions.R
+        python3 faasr_entry.py
 """
             
             # Create or update the workflow file
