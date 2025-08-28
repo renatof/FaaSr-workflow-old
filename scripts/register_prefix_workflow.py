@@ -374,7 +374,7 @@ def deploy_to_github(workflow_data):
             # Get container image, with fallback to default
             container_image = workflow_data.get('ActionContainers', {}).get(action_name, 'ghcr.io/faasr/github-actions-tidyverse')
             
-            workflow_content = f"""Running action: {prefixed_action_name}
+            workflow_content = f"""name: {prefixed_action_name}
 
 on:
   workflow_dispatch:
