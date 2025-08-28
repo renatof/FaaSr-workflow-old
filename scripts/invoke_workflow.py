@@ -160,8 +160,10 @@ def trigger_github_actions(workflow_data, action_name):
     # Create body for POST request
     body = {
         "ref": branch,
-        "inputs": f"{inputs}"
-        
+        "inputs": {
+            "OVERWRITTEN": json_overwritten,
+            "PAYLOAD_URL": payload_url
+        }
     }
     
     # Send request
