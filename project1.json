@@ -2,16 +2,10 @@
     "ComputeServers": {
         "My_GitHub_Account": {
             "FaaSType": "GitHubActions",
-            "UserName": "dekkov",
-            "ActionRepoName": "FaaSr-cli",
+            "UserName": "nolcut",
+            "ActionRepoName": "FaaSr-workflow",
             "Branch": "main",
             "Token": "My_GitHub_Account_TOKEN"
-        },
-        "My_Lambda_Account": {
-            "FaaSType": "Lambda",
-            "Region": "us-east-1",
-            "AccessKey": "My_Lambda_Account_ACCESS_KEY",
-            "SecretKey": "My_Lambda_Account_SECRET_KEY"
         }
     },
     "DataStores": {
@@ -25,50 +19,50 @@
         }
     },
     "FunctionList": {
-        "start_github": {
-            "FunctionName": "create_sample_data",
+        "add_operation": {
+            "FunctionName": "add_rpc",
             "FaaSServer": "My_GitHub_Account",
+            "Type": "Python",
             "Arguments": {
-                "folder": "project1",
-                "output1": "sample1.csv",
-                "output2": "sample2.csv"
+                "folder": "testadd",
+                "num1": 400,
+                "num2": 100,
+                "output": "add_result_500.txt"
             },
             "InvokeNext": [
-                "sum_github",
-                "start_lambda"
+                "r_func",
+                "delete"
             ]
         },
-        "start_lambda": {
-            "FunctionName": "create_sample_data",
-            "FaaSServer": "My_Lambda_Account",
-            "Arguments": {
-                "folder": "project1",
-                "output1": "sample1_lambda.csv",
-                "output2": "sample2_lambda.csv"
-            },
-            "InvokeNext": "sum_lambda"
-        },
-        "sum_github": {
-            "FunctionName": "compute_sum",
+        "r_func": {
+            "FunctionName": "r_log",
             "FaaSServer": "My_GitHub_Account",
+            "Type": "R",
             "Arguments": {
-                "folder": "project1",
-                "input1": "sample1.csv",
-                "input2": "sample2.csv",
-                "output": "sum.csv"
+                "message": "testing testing testing"
             },
             "InvokeNext": [
+                {
+                    "True": "folders"
+                }
+            ]
+        },
+        "delete": {
+            "FunctionName": "print_and_delete",
+            "FaaSServer": "My_GitHub_Account",
+            "Type": "Python",
+            "Arguments": {
+                "folder": "testadd",
+                "filename": "add_result_500.txt"
+            },
+            "InvokeNext": "log"
+        },
+        "folders": {
+            "FunctionName": "test_list_folders",
+            "FaaSServer": "My_GitHub_Account",
+            "Type": "Python",
+            "Arguments": {
 
-            ]
-        },
-        "sum_lambda": {
-            "FunctionName": "compute_sum",
-            "FaaSServer": "My_Lambda_Account",
-            "Arguments": {
-                "folder": "project1",
-                "input1": "sample1_lambda.csv",
-                "input2": "sample2_lambda.csv",
-                "output": "sum.csv"
             },
             "InvokeNext": [
 
@@ -76,14 +70,24 @@
         }
     },
     "ActionContainers": {
-        "start_github": "ghcr.io/faasr/github-actions-tidyverse",
-        "sum_github": "ghcr.io/faasr/github-actions-tidyverse"
+        "r_log": "ghcr.io/nolcut/ga-rpc-python: 0.1.6",
+        "add_operation": "ghcr.io/nolcut/ga-rpc-python:0.1.6",
+        "log": "ghcr.io/nolcut/ga-rpc-python:0.1.6",
+        "folders": "ghcr.io/nolcut/ga-rpc-python:0.1.6"
+    },
+    "PyPIPackageDownloads": {
+        "add_rpc": "random2"
+    },
+    "FunctionGitHubPackage": {
+        "add_rpc": "oittaa/uuid6-python"
     },
     "FunctionGitRepo": {
-        "create_sample_data": "FaaSr/FaaSr-tutorial",
-        "compute_sum": "FaaSr/FaaSr-tutorial"
+        "add_rpc": "nolcut/test-py",
+        "r_log": "nolcut/test-py",
+        "print_and_delete": "nolcut/test-py",
+        "test_list_folders": "nolcut/test-py"
     },
-    "FunctionInvoke": "start_github",
+    "FunctionInvoke": "add_operation",
     "InvocationID": "",
     "FaaSrLog": "FaaSrLog",
     "LoggingDataStore": "My_Minio_Bucket",
