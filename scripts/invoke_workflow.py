@@ -31,7 +31,7 @@ def read_workflow_file(file_path):
 def get_credentials():
     """Get credentials from environment variables."""
     return {
-        "My_GitHub_Account_TOKEN": os.getenv('GITHUB_TOKEN'),
+        "My_GitHub_Account_TOKEN": os.getenv('PAT'),
         "My_Minio_Bucket_ACCESS_KEY": os.getenv('MINIO_ACCESS_KEY'),
         "My_Minio_Bucket_SECRET_KEY": os.getenv('MINIO_SECRET_KEY'),
         "My_OW_Account_API_KEY": os.getenv('OW_API_KEY', ''),
@@ -215,9 +215,9 @@ def trigger_github_actions(workflow_data, action_name):
 
 def get_github_token():
     # Get GitHub PAT from environment variable
-    token = os.getenv('GITHUB_TOKEN')
+    token = os.getenv('PAT')
     if not token:
-        print("Error: GITHUB_TOKEN environment variable not set")
+        print("Error: PAT environment variable not set")
         sys.exit(1)
     return token
 
