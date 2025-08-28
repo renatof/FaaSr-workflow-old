@@ -160,7 +160,7 @@ def trigger_github_actions(workflow_data, action_name):
     # Create body for POST request
     body = {
         "ref": branch,
-        "inputs": {inputs}
+        "inputs": f"{inputs}"
         
     }
     
