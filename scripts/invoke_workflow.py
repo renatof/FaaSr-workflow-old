@@ -31,7 +31,7 @@ def read_workflow_file(file_path):
 def get_credentials():
     """Get credentials from environment variables."""
     return {
-        "My_GitHub_Account_TOKEN": os.getenv('PAT'),
+        "My_GitHub_Account_TOKEN": os.getenv('GITHUB_TOKEN'),
         "My_Minio_Bucket_ACCESS_KEY": os.getenv('MINIO_ACCESS_KEY'),
         "My_Minio_Bucket_SECRET_KEY": os.getenv('MINIO_SECRET_KEY'),
         "My_OW_Account_API_KEY": os.getenv('OW_API_KEY', ''),
@@ -106,7 +106,7 @@ def trigger_github_actions(workflow_data, action_name):
     server_config = workflow_data['ComputeServers'][server_name]
     
     # Get GitHub credentials and repo info
-    pat = server_config.get('PAT') # Use token from config or environment
+    pat = get_github_token() # Use token from config or environment
     username = server_config['UserName']
     reponame = server_config['ActionRepoName']
     repo = f"{username}/{reponame}"
@@ -134,17 +134,13 @@ def trigger_github_actions(workflow_data, action_name):
 
     json_overwritten = json.dumps(overwritten_fields)
     
-    # Create inputs similar to invoke_gh method
-    # Construct GitHub raw file URL for the workflow JSON file
+    # Create payload URL following the structure: {username}/{repo}/{branch}/{workflow_file}
+    # Extract workflow file name from the stored path
     workflow_file_path = workflow_data.get('_workflow_file', '')
-    if workflow_file_path:
-        # Extract just the filename from the path
-        import os
-        workflow_filename = os.path.basename(workflow_file_path)
-        payload_url = f"{username}/{reponame}/{branch}/{workflow_filename}"
-    else:
-        payload_url = ""
+    workflow_filename = os.path.basename(workflow_file_path)
+    payload_url = f"{username}/{reponame}/{branch}/{workflow_filename}"
     
+    # Create inputs similar to invoke_gh method
     inputs = {
         "OVERWRITTEN": json_overwritten,
         "PAYLOAD_URL": payload_url,
@@ -164,10 +160,12 @@ def trigger_github_actions(workflow_data, action_name):
     # Create body for POST request
     body = {
         "ref": branch,
-        "inputs": inputs
+        "inputs": {
+            "PAYLOAD": json.dumps(payload)
+        }
     }
     
-    # Send request with improved error handling
+    # Send request
     try:
         response = requests.post(url, headers=headers, json=body)
         
