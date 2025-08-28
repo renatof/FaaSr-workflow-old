@@ -213,9 +213,9 @@ def trigger_github_actions(workflow_data, action_name):
 
 def get_github_token():
     # Get GitHub PAT from environment variable
-    token = os.getenv('PAT')
+    token = os.getenv('GITHUB_TOKEN')
     if not token:
-        print("Error: PAT environment variable not set")
+        print("Error: GITHUB_TOKEN environment variable not set")
         sys.exit(1)
     return token
 
