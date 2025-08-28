@@ -53,14 +53,14 @@
         }
     },
     "ActionContainers": {
-        "start_github": "ghcr.io/nolcut/ga-rpc-python-base-r:dev",
-        "sum_github": "ghcr.io/nolcut/ga-rpc-python-base-r:dev"
+        "start": "ghcr.io/nolcut/ga-rpc-python-base-r:dev",
+        "sum": "ghcr.io/nolcut/ga-rpc-python-base-r:dev"
     },
     "FunctionGitRepo": {
         "create_sample_data": "FaaSr/FaaSr-tutorial",
         "compute_sum": "FaaSr/FaaSr-tutorial"
     },
-    "FunctionInvoke": "start_github",
+    "FunctionInvoke": "start",
     "InvocationID": "",
     "FaaSrLog": "FaaSrLog",
     "LoggingDataStore": "My_Minio_Bucket",
