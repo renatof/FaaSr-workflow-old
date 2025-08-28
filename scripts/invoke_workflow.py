@@ -30,7 +30,7 @@ def read_workflow_file(file_path):
 
 def get_credentials():
     """Get credentials from environment variables."""
-    credentials = {
+    return {
         "My_GitHub_Account_TOKEN": os.getenv('GITHUB_TOKEN'),
         "My_Minio_Bucket_ACCESS_KEY": os.getenv('MINIO_ACCESS_KEY'),
         "My_Minio_Bucket_SECRET_KEY": os.getenv('MINIO_SECRET_KEY'),
@@ -38,26 +38,6 @@ def get_credentials():
         "My_Lambda_Account_ACCESS_KEY": os.getenv('AWS_ACCESS_KEY_ID', ''),
         "My_Lambda_Account_SECRET_KEY": os.getenv('AWS_SECRET_ACCESS_KEY', ''),
     }
-    
-    # Debug logging for credential retrieval
-    print("\n===== CREDENTIAL DEBUG =====")
-    print(f"GITHUB_TOKEN: {'SET' if credentials['My_GitHub_Account_TOKEN'] else 'NOT SET'}")
-    print(f"MINIO_ACCESS_KEY: {'SET' if credentials['My_Minio_Bucket_ACCESS_KEY'] else 'NOT SET'}")
-    print(f"MINIO_SECRET_KEY: {'SET' if credentials['My_Minio_Bucket_SECRET_KEY'] else 'NOT SET'}")
-    print(f"OW_API_KEY: {'SET' if credentials['My_OW_Account_API_KEY'] else 'NOT SET'}")
-    print(f"AWS_ACCESS_KEY_ID: {'SET' if credentials['My_Lambda_Account_ACCESS_KEY'] else 'NOT SET'}")
-    print(f"AWS_SECRET_ACCESS_KEY: {'SET' if credentials['My_Lambda_Account_SECRET_KEY'] else 'NOT SET'}")
-    
-    # Show first/last few characters of credentials for verification (security conscious)
-    if credentials['My_Minio_Bucket_ACCESS_KEY']:
-        access_key = credentials['My_Minio_Bucket_ACCESS_KEY']
-        print(f"MINIO_ACCESS_KEY preview: {access_key[:4]}...{access_key[-4:] if len(access_key) > 8 else ''}")
-    if credentials['My_Minio_Bucket_SECRET_KEY']:
-        secret_key = credentials['My_Minio_Bucket_SECRET_KEY']
-        print(f"MINIO_SECRET_KEY preview: {secret_key[:4]}...{secret_key[-4:] if len(secret_key) > 8 else ''}")
-    print("===== END CREDENTIAL DEBUG =====\n")
-    
-    return credentials
 
 def build_faasr_payload(workflow_data, mask_secrets_for_github=False):
     # Start with credentials at the top (matching R deployment style)
@@ -70,83 +50,52 @@ def build_faasr_payload(workflow_data, mask_secrets_for_github=False):
     # payload.update(workflow_copy)
     payload = workflow_copy
     
-    print(f"\n===== PAYLOAD BUILD DEBUG (mask_secrets_for_github={mask_secrets_for_github}) =====")
-    
     # Get environment credentials
     credentials = get_credentials()
     
     # Replace placeholder values in ComputeServers with actual credentials based on FaaSType
     if 'ComputeServers' in payload:
-        print("Processing ComputeServers...")
         for server_key, server_config in payload['ComputeServers'].items():
             faas_type = server_config.get('FaaSType', '')
-            print(f"  Server: {server_key}, FaaSType: {faas_type}")
             
             if mask_secrets_for_github:
                 # Mask secrets for GitHub Actions (existing logic)
                 if faas_type.lower() in ['githubactions', 'github_actions', 'github']:
                     server_config['Token'] = f"{server_key}_TOKEN"
-                    print(f"    Masked GitHub token: {server_key}_TOKEN")
                 elif faas_type.lower() in ['lambda', 'aws_lambda', 'aws']:
                     server_config['AccessKey'] = f"{server_key}_ACCESS_KEY"
                     server_config['SecretKey'] = f"{server_key}_SECRET_KEY"
-                    print(f"    Masked Lambda keys: {server_key}_ACCESS_KEY, {server_key}_SECRET_KEY")
                 elif faas_type.lower() in ['openwhisk', 'open_whisk', 'ow']:
                     server_config['API.key'] = f"{server_key}_API_KEY"
-                    print(f"    Masked OpenWhisk API key: {server_key}_API_KEY")
             else:
                 # Replace placeholder values with actual credentials
                 if faas_type.lower() in ['lambda', 'aws_lambda', 'aws']:
                     # Replace Lambda AccessKey/SecretKey placeholders
                     if credentials['My_Lambda_Account_ACCESS_KEY']:
                         server_config['AccessKey'] = credentials['My_Lambda_Account_ACCESS_KEY']
-                        print(f"    Set Lambda AccessKey from environment")
                     if credentials['My_Lambda_Account_SECRET_KEY']:
                         server_config['SecretKey'] = credentials['My_Lambda_Account_SECRET_KEY']
-                        print(f"    Set Lambda SecretKey from environment")
                 elif faas_type.lower() in ['githubactions', 'github_actions', 'github']:
                     if credentials['My_GitHub_Account_TOKEN']:
                         server_config['Token'] = credentials['My_GitHub_Account_TOKEN']
-                        print(f"    Set GitHub Token from environment")
                 elif faas_type.lower() in ['openwhisk', 'open_whisk', 'ow']:
                     # Always set the API.key field for OpenWhisk
                     if credentials['My_OW_Account_API_KEY']:
                         server_config['API.key'] = credentials['My_OW_Account_API_KEY']
-                        print(f"    Set OpenWhisk API key from environment")
 
     # Replace placeholder values in DataStores with actual credentials
     if 'DataStores' in payload:
-        print("Processing DataStores...")
         for store_key, store_config in payload['DataStores'].items():
-            print(f"  DataStore: {store_key}")
-            print(f"    Original config: {json.dumps(store_config, indent=4)}")
-            
             if mask_secrets_for_github:
                 # Mask secrets for GitHub Actions (existing logic)
                 store_config['AccessKey'] = f"{store_key}_ACCESS_KEY"
                 store_config['SecretKey'] = f"{store_key}_SECRET_KEY"
-                print(f"    Masked credentials: {store_key}_ACCESS_KEY, {store_key}_SECRET_KEY")
             else:
-                if store_key == 'My_Minio_Bucket':
-                    if credentials['My_Minio_Bucket_ACCESS_KEY']:
-                        old_access_key = store_config.get('AccessKey', 'NOT SET')
-                        store_config['AccessKey'] = credentials['My_Minio_Bucket_ACCESS_KEY']
-                        print(f"    Replaced AccessKey: '{old_access_key}' -> '{credentials['My_Minio_Bucket_ACCESS_KEY'][:4]}...{credentials['My_Minio_Bucket_ACCESS_KEY'][-4:]}'")
-                    else:
-                        print(f"    WARNING: MINIO_ACCESS_KEY not available from environment!")
-                        
-                    if credentials['My_Minio_Bucket_SECRET_KEY']:
-                        old_secret_key = store_config.get('SecretKey', 'NOT SET')
-                        store_config['SecretKey'] = credentials['My_Minio_Bucket_SECRET_KEY']
-                        print(f"    Replaced SecretKey: '{old_secret_key}' -> '{credentials['My_Minio_Bucket_SECRET_KEY'][:4]}...{credentials['My_Minio_Bucket_SECRET_KEY'][-4:]}'")
-                    else:
-                        print(f"    WARNING: MINIO_SECRET_KEY not available from environment!")
-                else:
-                    print(f"    No credential replacement for store: {store_key}")
-            
-            print(f"    Final config: {json.dumps(store_config, indent=4)}")
+                if store_key == 'My_Minio_Bucket' and credentials['My_Minio_Bucket_ACCESS_KEY']:
+                    store_config['AccessKey'] = credentials['My_Minio_Bucket_ACCESS_KEY']
+                if store_key == 'My_Minio_Bucket' and credentials['My_Minio_Bucket_SECRET_KEY']:
+                    store_config['SecretKey'] = credentials['My_Minio_Bucket_SECRET_KEY']
     
-    print("===== END PAYLOAD BUILD DEBUG =====\n")
     return payload
 
 def trigger_github_actions(workflow_data, action_name):
