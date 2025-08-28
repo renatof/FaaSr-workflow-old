@@ -110,25 +110,28 @@ def trigger_github_actions(workflow_data, action_name):
     username = server_config['UserName']
     reponame = server_config['ActionRepoName']
     repo = f"{username}/{reponame}"
-    branch = server_config.get('Branch', 'main')  # Default to 'main' if Branch not specified
+    git_ref = server_config.get('Branch', 'main')  # Default to 'main' if Branch not specified
     
-    # Use WorkflowName prefix with action name for workflow name
-    workflow_name_prefix = workflow_data.get('WorkflowName', 'default')
-    workflow_name = f"{workflow_name_prefix}-{action_name}.yml"
-
-    # Create payload with credentials
-    payload = build_faasr_payload(workflow_data, mask_secrets_for_github=True)
-    
-    # Create overwritten fields structure similar to invoke_gh
-    overwritten_fields = payload.copy()
-    
-    # If UseSecretStore == True, don't send secrets to next action
-    if server_config.get("UseSecretStore"):
-        if "ComputeServers" in overwritten_fields:
-            del overwritten_fields["ComputeServers"]
-        if "DataStores" in overwritten_fields:
-            del overwritten_fields["DataStores"]
+    # Use workflow file naming logic from reference implementation
+    if not action_name.endswith(".yml") and not action_name.endswith(".yaml"):
+        workflow_name = f"{action_name}.yml"
     else:
+        workflow_name = action_name
+
+    # Create overwritten fields structure matching reference invoke_gh implementation
+    # Start with basic workflow fields (excluding secrets initially)
+    overwritten_fields = {
+        "FunctionInvoke": action_name
+    }
+    
+    # Add other workflow fields but exclude ComputeServers and DataStores initially
+    for key, value in workflow_data.items():
+        if key not in ["ComputeServers", "DataStores", "_workflow_file"]:
+            overwritten_fields[key] = value
+    
+    # If UseSecretStore == False, include secrets in overwritten fields
+    # If UseSecretStore == True, don't send secrets to next action
+    if not server_config.get("UseSecretStore"):
         overwritten_fields["ComputeServers"] = workflow_data.get("ComputeServers", {})
         overwritten_fields["DataStores"] = workflow_data.get("DataStores", {})
 
@@ -143,7 +146,7 @@ def trigger_github_actions(workflow_data, action_name):
     # Extract workflow file name from the stored path
     workflow_file_path = workflow_data.get('_workflow_file', '')
     workflow_filename = os.path.basename(workflow_file_path)
-    payload_url = f"{username}/{reponame}/{branch}/{workflow_filename}"
+    payload_url = f"{username}/{reponame}/{git_ref}/{workflow_filename}"
     print(f"Debug: PAYLOAD_URL: {payload_url}")
     
     # Create inputs similar to invoke_gh method
@@ -165,7 +168,7 @@ def trigger_github_actions(workflow_data, action_name):
     
     # Create body for POST request
     body = {
-        "ref": branch,
+        "ref": git_ref,
         "inputs": {
             "OVERWRITTEN": json_overwritten,
             "PAYLOAD_URL": payload_url
@@ -185,7 +188,7 @@ def trigger_github_actions(workflow_data, action_name):
         elif response.status_code == 404:
             print(f"✗ GitHub Action: Cannot find the destination: "
                   f"check repo: {repo}, workflow: {workflow_name}, "
-                  f"and branch: {branch}")
+                  f"and branch: {git_ref}")
             sys.exit(1)
         elif response.status_code == 422:
             try:
@@ -193,9 +196,9 @@ def trigger_github_actions(workflow_data, action_name):
                 if message:
                     print(f"✗ GitHub Action: {message}")
                 else:
-                    print(f"✗ GitHub Action: Cannot find the destination; check ref {branch}")
+                    print(f"✗ GitHub Action: Cannot find the destination; check ref {git_ref}")
             except json.JSONDecodeError:
-                print(f"✗ GitHub Action: Cannot find the destination; check ref {branch}")
+                print(f"✗ GitHub Action: Cannot find the destination; check ref {git_ref}")
             sys.exit(1)
         else:
             try:
