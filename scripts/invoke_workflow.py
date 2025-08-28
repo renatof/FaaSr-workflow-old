@@ -151,7 +151,7 @@ def trigger_github_actions(workflow_data, action_name):
     }
     
     # Create URL for GitHub API
-    url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow_file}/dispatches"
+    url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow_name}/dispatches"
     print(f"Debug: Request URL: {url}")
     
     # Create headers for POST request
@@ -173,13 +173,13 @@ def trigger_github_actions(workflow_data, action_name):
         
         # Enhanced error handling based on invoke_gh method
         if response.status_code == 204:
-            print(f"✓ Successfully triggered GitHub Actions workflow: {workflow_file}")
+            print(f"✓ Successfully triggered GitHub Actions workflow: {workflow_name}")
         elif response.status_code == 401:
             print("✗ GitHub Action: Authentication failed, check the credentials")
             sys.exit(1)
         elif response.status_code == 404:
             print(f"✗ GitHub Action: Cannot find the destination: "
-                  f"check repo: {repo}, workflow: {workflow_file}, "
+                  f"check repo: {repo}, workflow: {workflow_name}, "
                   f"and branch: {branch}")
             sys.exit(1)
         elif response.status_code == 422:
