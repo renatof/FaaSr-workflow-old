@@ -18,7 +18,6 @@
     },
     "DataStores": {
         "My_Minio_Bucket": {
-            "Endpoint": "https://play.min.io",
             "Bucket": "hoang",
             "Region": "us-east-1",
             "Writable": "TRUE",
@@ -38,10 +37,33 @@
                 "output": "add_result_500.txt"
             },
             "InvokeNext": [
+                "r_func(3)"
+            ]
+        },
+        "r_func": {
+            "FunctionName": "r_log",
+            "FaaSServer": "My_GitHub_Account",
+            "Type": "R",
+            "Arguments": {
+                "message": "testing testing testing"
+            },
+            "InvokeNext": [
+                "delete",
                 "folders"
             ]
         },
-
+        "delete": {
+            "FunctionName": "print_and_delete",
+            "FaaSServer": "My_Lambda_Account",
+            "Type": "Python",
+            "Arguments": {
+                "folder": "testadd",
+                "filename": "add_result_500.txt"
+            },
+            "InvokeNext": [
+                {"True": ["folders"]}
+            ]
+        },
         "folders": {
             "FunctionName": "test_list_folders",
             "FaaSServer": "My_GitHub_Account",
@@ -83,5 +105,5 @@
     "FaaSrLog": "FaaSrLog",
     "LoggingDataStore": "My_Minio_Bucket",
     "DefaultDataStore": "My_Minio_Bucket",
-    "WorkflowName": "testworkflow"
+    "WorkflowName": "endtoend"
 }
