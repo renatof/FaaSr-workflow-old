@@ -132,13 +132,19 @@ def trigger_github_actions(workflow_data, action_name):
         overwritten_fields["ComputeServers"] = workflow_data.get("ComputeServers", {})
         overwritten_fields["DataStores"] = workflow_data.get("DataStores", {})
 
+    # Ensure we have valid JSON content
+    if not overwritten_fields:
+        overwritten_fields = {}
+    
     json_overwritten = json.dumps(overwritten_fields)
+    print(f"Debug: OVERWRITTEN JSON: {json_overwritten}")
     
     # Create payload URL following the structure: {username}/{repo}/{branch}/{workflow_file}
     # Extract workflow file name from the stored path
     workflow_file_path = workflow_data.get('_workflow_file', '')
     workflow_filename = os.path.basename(workflow_file_path)
     payload_url = f"{username}/{reponame}/{branch}/{workflow_filename}"
+    print(f"Debug: PAYLOAD_URL: {payload_url}")
     
     # Create inputs similar to invoke_gh method
     inputs = {
