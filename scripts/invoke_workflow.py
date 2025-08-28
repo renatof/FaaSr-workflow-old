@@ -112,11 +112,12 @@ def trigger_github_actions(workflow_data, action_name):
     repo = f"{username}/{reponame}"
     git_ref = server_config.get('Branch', 'main')  # Default to 'main' if Branch not specified
     
-    # Use workflow file naming logic from reference implementation
+    # Use workflow file naming logic with WorkflowName prefix
+    workflow_name_prefix = workflow_data.get('WorkflowName', 'default')
     if not action_name.endswith(".yml") and not action_name.endswith(".yaml"):
-        workflow_name = f"{action_name}.yml"
+        workflow_name = f"{workflow_name_prefix}-{action_name}.yml"
     else:
-        workflow_name = action_name
+        workflow_name = f"{workflow_name_prefix}-{action_name}"
 
     # Create overwritten fields structure matching reference invoke_gh implementation
     # Start with basic workflow fields (excluding secrets initially)
@@ -140,8 +141,7 @@ def trigger_github_actions(workflow_data, action_name):
         overwritten_fields = {}
     
     json_overwritten = json.dumps(overwritten_fields)
-    print(f"Debug: OVERWRITTEN JSON: {json_overwritten}")
-    
+
     # Create payload URL following the structure: {username}/{repo}/{branch}/{workflow_file}
     # Extract workflow file name from the stored path
     workflow_file_path = workflow_data.get('_workflow_file', '')
@@ -157,7 +157,6 @@ def trigger_github_actions(workflow_data, action_name):
     
     # Create URL for GitHub API
     url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow_name}/dispatches"
-    print(f"Debug: Request URL: {url}")
     
     # Create headers for POST request
     headers = {
