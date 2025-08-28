@@ -32,8 +32,8 @@
             "Type": "R",
             "Arguments": {
                 "folder": "project2",
-                "output1": "sample1.csv",
-                "output2": "sample2.csv"
+                "output1": "df1.csv",
+                "output2": "df2.csv"
             },
             "InvokeNext": [
                 "sum"
@@ -45,8 +45,8 @@
             "Type": "R",
             "Arguments": {
                 "folder": "project2",
-                "input1": "sample1.csv",
-                "input2": "sample2.csv",
+                "input1": "df1.csv",
+                "input2": "df2.csv",
                 "output": "sum.csv"
             },
             "InvokeNext": []
