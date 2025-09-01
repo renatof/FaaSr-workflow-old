@@ -26,7 +26,10 @@
   },
   "ComputeServers": {
     "My_GitHub_Account": {
-      "FaaSType": "GitHubActions"
+      "FaaSType": "GitHubActions",
+      "UserName": "renatof",
+      "ActionRepoName": "FaaSr-workflow",
+      "Branch": "main"
     }
   },
   "DataStores": {
