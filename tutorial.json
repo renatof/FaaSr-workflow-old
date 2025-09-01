@@ -1,0 +1,52 @@
+{
+  "ActionList": {
+    "start": {
+      "Arguments": {
+        "folder": "tutorial",
+        "output1": "sample1.csv",
+        "output2": "sample2.csv"
+      },
+      "InvokeNext": [
+        "sum"
+      ],
+      "FaaSServer": "My_GitHub_Account",
+      "FunctionName": "create_sample_data"
+    },
+    "sum": {
+      "FunctionName": "compute_sum",
+      "FaaSServer": "My_GitHub_Account",
+      "Arguments": {
+        "folder": "tutorial",
+        "input2": "sample2.csv",
+        "input1": "sample1.csv",
+        "output": "sum.csv"
+      },
+      "InvokeNext": []
+    }
+  },
+  "ComputeServers": {
+    "My_GitHub_Account": {
+      "FaaSType": "GitHubActions"
+    }
+  },
+  "DataStores": {
+    "My_Minio_Bucket": {
+      "Endpoint": "https://play.min.io",
+      "Bucket": "faasr",
+      "Region": "us-east-1"
+    }
+  },
+  "ActionContainers": {
+    "start": "ghcr.io/faasr/ga-rpc-r:dev",
+    "sum": "ghcr.io/faasr/ga-rpc-r:dev"
+  },
+  "FunctionInvoke": "start",
+  "DefaultDataStore": "My_Minio_Bucket",
+  "FunctionGitRepo": {
+    "create_sample_data": "FaaSr/FaaSr-tutorial",
+    "compute_sum": "FaaSr/FaaSr-tutorial"
+  },
+  "LoggingDataStore": "My_Minio_Bucket",
+  "InvocationID": "testuuid",
+  "WorkflowName": "tutorial"
+}
