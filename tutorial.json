@@ -29,14 +29,17 @@
       "FaaSType": "GitHubActions",
       "UserName": "renatof",
       "ActionRepoName": "FaaSr-workflow",
-      "Branch": "main"
+      "Branch": "main",
+      "Token": "My_GitHub_Account_TOKEN"
     }
   },
   "DataStores": {
     "My_Minio_Bucket": {
       "Endpoint": "https://play.min.io",
       "Bucket": "faasr",
-      "Region": "us-east-1"
+      "Region": "us-east-1",
+      "AccessKey": "My_Minio_Bucket_ACCESS_KEY",
+      "SecretKey": "My_Minio_Bucket_SECRET_KEY"
     }
   },
   "ActionContainers": {
