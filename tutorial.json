@@ -45,8 +45,8 @@
     }
   },
   "ActionContainers": {
-    "start": "ghcr.io/faasr/ga-rpc-r:dev",
-    "sum": "ghcr.io/faasr/ga-rpc-r:dev"
+    "start": "ghcr.io/faasr/github-actions-r:dev",
+    "sum": "ghcr.io/faasr/github-actions-r:dev"
   },
   "FunctionInvoke": "start",
   "DefaultDataStore": "My_Minio_Bucket",
