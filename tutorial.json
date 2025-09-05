@@ -35,7 +35,7 @@
     }
   },
   "DataStores": {
-    "My_Minio_Bucket": {
+    "MINIO": {
       "Endpoint": "https://play.min.io",
       "Bucket": "faasr",
       "Region": "us-east-1"
@@ -46,12 +46,12 @@
     "sum": "ghcr.io/faasr/github-actions-r:dev"
   },
   "FunctionInvoke": "start",
-  "DefaultDataStore": "My_Minio_Bucket",
+  "DefaultDataStore": "MINIO",
   "FunctionGitRepo": {
     "create_sample_data": "FaaSr/FaaSr-tutorial",
     "compute_sum": "FaaSr/FaaSr-tutorial"
   },
-  "LoggingDataStore": "My_Minio_Bucket",
+  "LoggingDataStore": "MINIO",
   "FaaSrLog": "FaaSrLog",
   "InvocationID": "",
   "WorkflowName": "tutorial"
