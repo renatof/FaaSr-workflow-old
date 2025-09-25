@@ -1,7 +1,8 @@
 name: 'MinioPlayMb'
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: "30 4 * * *"
 
 jobs:
   deploy:
@@ -12,6 +13,6 @@ jobs:
           # Download and install
           curl https://dl.min.io/client/mc/release/linux-amd64/mc -o mc
           chmod +x mc
-          ./mc mb play/faasrtest
+          ./mc mb play/faasr
           
           
