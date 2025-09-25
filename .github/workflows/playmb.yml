@@ -1,0 +1,17 @@
+name: 'MinioPlayMb'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Minio CLI
+        run: |
+          # Download and install
+          curl https://dl.min.io/client/mc/release/linux-amd64/mc -o mc
+          chmod +x mc
+          mc mb play/faasrtest
+          
+          
